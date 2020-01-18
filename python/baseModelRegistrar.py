@@ -26,9 +26,9 @@ class baseModelRegistrar(baseFramework):
     def __init__(self, model_object, model_tag, model_subtag, model_version):  # not use_local,  model_directory and s3 related
         # init base class
         log.info('Initializing baseModelRegistrar class...')
-        baseFramework.__init__(self, model_object=model_subject, model_tag=model_tag,
+        baseFramework.__init__(self, model_object=model_object, model_tag=model_tag,
                                model_subtag=model_subtag, model_version=model_version)
-        self.model_id = model_id
+        self.model_id = None
         self.masterModelTable = None
         self.new_model_entry = None
         self.deployable_model_id = None
@@ -37,6 +37,8 @@ class baseModelRegistrar(baseFramework):
     def _save_masterModelTable(self):
         # by default, model gets saved to project/model directory
         masterModelTable = self._load_masterModeltable()
+        # find model_id
+        self.model_id = self._find_model_id(masterModelTable)
         # check deployment status
         # add deployment fields: deployment status, commission_date, decommision_date
         deployment_entry = self._check_model_deployment_logic()
@@ -61,10 +63,10 @@ class baseModelRegistrar(baseFramework):
         self.model_path = self._get_model_path()
         # set up schema
         new_model_base_info = {
-            "model_id": self.model_id
+            "model_id": self.model_id,
             "model_tag": self.model_tag,
             "model_subtag": self.model_subtag,
-            "model_version": self.model_version
+            "model_version": self.model_version,
             "model_metric ": self.model_metric,
             "creation_date": self.creation_date['current_time'],
         }
@@ -109,6 +111,7 @@ class baseModelRegistrar(baseFramework):
         return
 
     def _find_model_id(self, masterModelTable):
+        log.info('Incrementing model_id...')
         if masterModelTable is None:
             model_id = 1
         else:

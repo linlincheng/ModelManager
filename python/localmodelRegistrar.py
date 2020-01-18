@@ -65,9 +65,6 @@ class localModelRegistrar(baseModelRegistrar):
         else: 
             self.masterModelTable = pd.read_csv('./masterModelTable.csv')
             log.info('masteModelTable retrieved from local...')
-        # increment model_id
-        self.model_id = self._find_model_id(masterModelTable = self.selfmasterModelTable)
-        log.info('New model_id incremented...')
 
     def _load_model_object(self):
         current_model_path = self.masterModelTable.query['model_id == {}'.\
