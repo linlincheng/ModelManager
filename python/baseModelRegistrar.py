@@ -37,8 +37,6 @@ class baseModelRegistrar(baseFramework):
     def _save_masterModelTable(self):
         # by default, model gets saved to project/model directory
         masterModelTable = self._load_masterModeltable()
-        # find model_id
-        self.model_id = self._find_model_id(masterModelTable)
         # check deployment status
         # add deployment fields: deployment status, commission_date, decommision_date
         deployment_entry = self._check_model_deployment_logic()
@@ -76,19 +74,22 @@ class baseModelRegistrar(baseFramework):
 
     @abstractmethod
     def _define_model_path_info(self):
-        # need to implement for local and remote
-        return
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _get_model_path(self):
         # get model_path: need to be implemented
-        log.error('Need to be implemented for local and remote scenarios each')
-        return
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _save_model_object(self):
-        log.error('Need to be implemented for local and remote scenarios each')
-        return
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     def _create_masterModelTable_schema(self):
         log.info('Creating new masterModelTable')
@@ -102,16 +103,17 @@ class baseModelRegistrar(baseFramework):
 
     @abstractmethod
     def _save_modelMasterTemplate(self, masterTableSchema):
-        log.error('Need to be implemented for local and remote scenarios each')
-        return
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _load_masterModeltable(self):
-        # to do
-        return
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     def _find_model_id(self, masterModelTable):
-        log.info('Incrementing model_id...')
         if masterModelTable is None:
             model_id = 1
         else:
@@ -125,7 +127,10 @@ class baseModelRegistrar(baseFramework):
             deployment_json = []
             with open(model_deployment_json) as json_file:
                 deployment_json = json.load(json_file, object_pairs_hook=OrderedDict)
-            model_deployment_logic = deployment_json.get_value(self.model_tag, None).get_value(self.model_subtag, None)
+            model_deployment_entry = deployment_json.get_value(self.model_tag, None).get_value(self.model_subtag, None)
+            if model_deployment_entry is not None:
+                model_deployment_logic = model_deployment_entry.get_value('deployment_logic')
+            log.info('Model_deployment found: {}'.format(model_deployment_logic))
         return(model_deployment_logic)
 
     def _check_model_deployment_logic(self):
@@ -134,15 +139,15 @@ class baseModelRegistrar(baseFramework):
         # check deployment_logic from config
         deployment_logic = self._parse_model_deployment_logic()
         # set up entry in masterModelTable
-        if deployment_logic.get_value('deployment_logic') is 'latest':
+        if deployment_logic is 'latest':
             if self.masterModelTable.shape[0] < 1:
                 log.info('No model_tag, model_subtag found in existing modelMasterTable, \
                     set as new pair...')
                 deployment_entry = self._deployment_entry()
             else:
                 self._update_current_masterModelTable()
-        elif deployment_logic.get_value('deployment_logic') is 'best_metric':
-            deployment_entry = self._check_best_metric_deployment_status(metric=deployment_logic.get_value('metric', None))
+        elif deployment_logic is 'best_metric':
+            deployment_entry = self._check_best_metric_deployment_status(metric=deployment_logic)
         self.masterModelTable.append(deployment_entry)
         log.info('masterModelTable updated, returning deployment entry...')
         return(deployment_entry)
@@ -214,7 +219,9 @@ class baseModelRegistrar(baseFramework):
 
     @abstractmethod
     def _load_model_object(self):
-        return
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     def _check_model_object(self):
         # check model_object has proper method setup
@@ -254,12 +261,16 @@ class baseModelRegistrar(baseFramework):
 
     @abstractmethod
     def _get_model_location(self):
-        return  # (model_location)
+        # return  # (model_location)
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _load_model(self, file_path):
-        # need to implement for local and remote scenarios
-        return  # (model_object)
+        log.info('need to implement for local and remote...')
+        raise NotImplementedError
+        pass
 
     # callable public mehtod: run load_deployable_model for inference jobs
     def load_deployable_model(self):

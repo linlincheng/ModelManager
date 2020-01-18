@@ -15,7 +15,7 @@ class baseFramework(object):
     "base class to unify model inteface for local and remote scenarios"
 
     def __init__(self, model_object, model_tag, model_subtag, model_version):
-        lof.info('Initializing baseFramework class...')
+        log.info('Initializing baseFramework class...')
         # def common attributes
         self.model_object = model_object
         self.model_tag = model_tag
