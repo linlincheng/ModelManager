@@ -1,0 +1,3 @@
+FROM  albergo
+RUN pip install jupyterlab
+ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--LabApp.token=''", "--allow-root", "--NotebookApp.custom_display_url=http://127.0.0.1:8888"]
