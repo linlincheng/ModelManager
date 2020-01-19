@@ -36,51 +36,55 @@ class baseModelRegistrar(baseFramework):
 
     def _save_masterModelTable(self):
         # by default, model gets saved to project/model directory
-        masterModelTable = self._load_masterModeltable()
+        self.masterModelTable = self._load_masterModeltable()
+        # create local copy
+        masterModelTable = self.masterModelTable
+        print('masterModelTable')
+        print(type(masterModelTable))
+        print(masterModelTable.shape)
+        print(masterModelTable)
         # check deployment status
         # add deployment fields: deployment status, commission_date, decommision_date
         deployment_entry = self._check_model_deployment_logic()
         # get basic modelMaster meta info
         new_model_base_info = self._set_up_base_modelMasterTable_info()
         # append to masterModelTable
-        self.new_model_entry = new_model_base_info.update(eployment_enty)
+        self.new_model_entry = dict(deployment_entry, **new_model_base_info)
         # update masterModelTable
-        self.masterModelTable = masterModelTable.append(self.new_model_entry)
+        self.masterModelTable = masterModelTable.append(self.new_model_entry, ignore_index=True)
         # save updated masterModelTabel
         self._save_modelMasterTemplate(self.masterModelTable)
         return
 
     def save_model(self):
+        # check model_object attributes, get_metric_score
+        self._check_model_object()
         # save updated masterModelTabel
         self._save_masterModelTable()
         # save model object
-        self._save_model_object(model_path=self.model_path)
+        self._save_model_object()
 
     def _set_up_base_modelMasterTable_info(self):
-        # set up model_path
-        self.model_path = self._get_model_path()
         # set up schema
         new_model_base_info = {
             "model_id": self.model_id,
             "model_tag": self.model_tag,
             "model_subtag": self.model_subtag,
             "model_version": self.model_version,
-            "model_metric ": self.model_metric,
-            "creation_date": self.creation_date['current_time'],
+            "model_metric ": self.model_object.model_metric,
+            "creation_date": self.current_datetime['current_time'],
         }
-        model_path_item = self._define_model_path_info(self)
-        new_model_base_info = new_model_base_info.update(model_path_item)
+        print('new_model_base_info')
+        print(new_model_base_info)
+        model_path_item = self._define_model_path_info()
+        print(model_path_item)
+        new_model_base_info = dict(model_path_item, **new_model_base_info)
+        print('new_model_base_info')
+        print(new_model_base_info)
         return(new_model_base_info)
 
     @abstractmethod
     def _define_model_path_info(self):
-        log.info('need to implement for local and remote...')
-        raise NotImplementedError
-        pass
-
-    @abstractmethod
-    def _get_model_path(self):
-        # get model_path: need to be implemented
         log.info('need to implement for local and remote...')
         raise NotImplementedError
         pass
@@ -99,6 +103,7 @@ class baseModelRegistrar(baseFramework):
         modelMasterTemplate = pd.DataFrame(columns=column_names)
         # #save modelMasterTemplate
         # self._save_modelMasterTemplate(modelMasterTemplate)
+        print(modelMasterTemplate)
         return(modelMasterTemplate)
 
     @abstractmethod
@@ -143,12 +148,12 @@ class baseModelRegistrar(baseFramework):
             if self.masterModelTable.shape[0] < 1:
                 log.info('No model_tag, model_subtag found in existing modelMasterTable, \
                     set as new pair...')
-                deployment_entry = self._deployment_entry()
+                deployment_entry = self._set_deployment_entry()
             else:
                 self._update_current_masterModelTable()
         elif deployment_logic is 'best_metric':
             deployment_entry = self._check_best_metric_deployment_status(metric=deployment_logic)
-        self.masterModelTable.append(deployment_entry)
+        self.masterModelTable.append(deployment_entry, ignore_index=True)
         log.info('masterModelTable updated, returning deployment entry...')
         return(deployment_entry)
 
@@ -156,7 +161,7 @@ class baseModelRegistrar(baseFramework):
         if update:
             deployment_entry = {
                         'deployment_status': True,
-                        'commission_date': self.current_datetime['curent_time'],
+                        'commission_date': self.current_datetime['current_time'],
                         'decommission_date': None
                     }
         else:
@@ -165,7 +170,7 @@ class baseModelRegistrar(baseFramework):
                         'commission_date': None,
                         'decommission_date': None
             }
-        return(update_deployment_entry)
+        return(deployment_entry)
 
     def _retrive_deployable_model_id(self):
         deployable_model_id = masterModelTable.query('model_tag == self.model_tag & model_subtag == self.model_subtag & \
@@ -193,8 +198,6 @@ class baseModelRegistrar(baseFramework):
     def _check_best_metric_deployment_status(self, metric):
         # assume best metric field consists of json string format: e.g. {'auc': 0.89}
         # to do: need to error handling no metric found default to first one
-        # check model_object attributes, get_metric_score
-        self._check_model_object()
         # steps: 1) retrive current active model location
         current_model_object = self._load_model_object()
         # steps: 2) score using self.model_object.get_value('validation_data')
@@ -227,20 +230,19 @@ class baseModelRegistrar(baseFramework):
         # check model_object has proper method setup
         self._check_model_object_method()
         # check model_object has proper attribute setup
-        self._check_model_object_attr()
+        attr_list = ['validation_data', 'model_metric', 'model_object']
+        [self._check_model_object_attr(attr) for attr in attr_list]
 
     def _check_model_object_method(self):
         log.info('Checking model object has get_metric_score method implemented...')
-        if not callable(self.model_object.get_metric_score):
-            log.error('model_object needs get_metric_score method to proceed, please implement it...')
-            sys.exit(1)
+        assert callable(self.model_object.get_metric_score), \
+            'model_object needs get_metric_score method to proceed, please implement it...'
         return
 
-    def _check_model_object_attr():
-        log.info('Checking model object has validation_data attribute...')
-        if not hasattr(self.model_object, 'validation_data'):
-            log.error('model_object needs validation_date to proceed, please verify...')
-            sys.exit(1)
+    def _check_model_object_attr(self, attr): 
+        log.info('Checking model object has {} attribute...'.format(attr))
+        assert hasattr(self.model_object, attr), \
+            'model_object needs {} to proceed, please verify...'.format(attr)
         return
 
     def _check_deployable_model_location(self):
@@ -248,15 +250,15 @@ class baseModelRegistrar(baseFramework):
             log.error('masterModelTable not found, save the model to your masterModelTable location first')
             sys.exit(1)
         else:
-            project_model = self.masterModelTable.query('model_tag == {model_tag} & \
+            project_model_dataframe = self.masterModelTable.query('model_tag == {model_tag} & \
                 model_subtag == {model_subtag} & deployment_status == "True"'.format(model_tag=self.model_tag,
-                                                        model_subtag=self.model_subtag))
-        if project_model.shape[0] != 1:
+                                                                                     model_subtag=self.model_subtag))
+        if project_model_dataframe.shape[0] != 1:
             log.error('model_tag, model_subtag info found {} pair(s) in masterModelTable, please \
-                        check entries...'.format(project_model.shape[0]))
+                        check entries...'.format(project_model_dataframe.shape[0]))
             sys.exit(1)
         else:
-            model_location = self._get_model_location()
+            model_location = self._get_model_location(project_model_dataframe)
             return(model_location)
 
     @abstractmethod
@@ -275,9 +277,12 @@ class baseModelRegistrar(baseFramework):
     # callable public mehtod: run load_deployable_model for inference jobs
     def load_deployable_model(self):
         # load masterModelTable
-        self._load_masterModeltable()
+        self.masterModelTable = self._load_masterModeltable()
         # check location
         model_location = self._check_deployable_model_location()
         # load_model object
         model_object = self._load_model(file_path=model_location)
         return(model_object)
+
+
+print('Test your baseModelRegistrar...')
