@@ -39,10 +39,6 @@ class baseModelRegistrar(baseFramework):
         self.masterModelTable = self._load_masterModeltable()
         # create local copy
         masterModelTable = self.masterModelTable
-        print('masterModelTable')
-        print(type(masterModelTable))
-        print(masterModelTable.shape)
-        print(masterModelTable)
         # check deployment status
         # add deployment fields: deployment status, commission_date, decommision_date
         deployment_entry = self._check_model_deployment_logic()
@@ -54,7 +50,6 @@ class baseModelRegistrar(baseFramework):
         self.masterModelTable = masterModelTable.append(self.new_model_entry, ignore_index=True)
         # save updated masterModelTabel
         self._save_modelMasterTemplate(self.masterModelTable)
-        return
 
     def save_model(self):
         # check model_object attributes, get_metric_score
@@ -67,20 +62,15 @@ class baseModelRegistrar(baseFramework):
     def _set_up_base_modelMasterTable_info(self):
         # set up schema
         new_model_base_info = {
-            "model_id": self.model_id,
+            "model_id": self._find_model_id(self.masterModelTable),
             "model_tag": self.model_tag,
             "model_subtag": self.model_subtag,
             "model_version": self.model_version,
             "model_metric ": self.model_object.model_metric,
             "creation_date": self.current_datetime['current_time'],
         }
-        print('new_model_base_info')
-        print(new_model_base_info)
         model_path_item = self._define_model_path_info()
-        print(model_path_item)
         new_model_base_info = dict(model_path_item, **new_model_base_info)
-        print('new_model_base_info')
-        print(new_model_base_info)
         return(new_model_base_info)
 
     @abstractmethod
@@ -98,12 +88,10 @@ class baseModelRegistrar(baseFramework):
     def _create_masterModelTable_schema(self):
         log.info('Creating new masterModelTable')
         column_names = ['model_id', 'model_tag', 'model_subtag', 'model_path', 'model_version',
-                        's3_region', 's3_bucket', 's3_location', 'model_metric',
-                        'deployment_status', 'creation_date', 'commision_date', 'decommission_date']
+                        's3_region', 's3_bucket', 's3_location',
+                        # TODO: check where it's been duped: model_metric','commision_date',
+                        'deployment_status', 'creation_date', 'decommission_date']
         modelMasterTemplate = pd.DataFrame(columns=column_names)
-        # #save modelMasterTemplate
-        # self._save_modelMasterTemplate(modelMasterTemplate)
-        print(modelMasterTemplate)
         return(modelMasterTemplate)
 
     @abstractmethod
@@ -119,10 +107,11 @@ class baseModelRegistrar(baseFramework):
         pass
 
     def _find_model_id(self, masterModelTable):
-        if masterModelTable is None:
-            model_id = 1
+        if masterModelTable is None or masterModelTable.shape[0] < 1:
+            model_id = 0
         else:
-            return(max(masterModelTable['model_id'])+1)
+            model_id = max(masterModelTable['model_id'])+1
+        return(model_id)
 
     def _parse_model_deployment_logic(self, model_deployment_json='./model_deployment.json'):
         if not os.path.exists('model_deployment_logic.json not set up, \
@@ -150,7 +139,9 @@ class baseModelRegistrar(baseFramework):
                     set as new pair...')
                 deployment_entry = self._set_deployment_entry()
             else:
-                self._update_current_masterModelTable()
+                result_dict = self._update_current_masterModelTable()
+                self.masterModelTable = result_dict['masterModelTable']
+                deployment_entry = result_dict['deployment_entry']
         elif deployment_logic is 'best_metric':
             deployment_entry = self._check_best_metric_deployment_status(metric=deployment_logic)
         self.masterModelTable.append(deployment_entry, ignore_index=True)
@@ -172,28 +163,31 @@ class baseModelRegistrar(baseFramework):
             }
         return(deployment_entry)
 
-    def _retrive_deployable_model_id(self):
-        deployable_model_id = masterModelTable.query('model_tag == self.model_tag & model_subtag == self.model_subtag & \
-                                                   deployment_status == "True"')['model_id']
-        log.info('Found current deployable model_id: {}'.format(deployable_model_id))
-        return(deployable_model_id)
+    def _retrive_deployable_model_info(self):
+        deployable_model_info = self.masterModelTable.query('model_tag == "{model_tag}" & model_subtag == "{model_subtag}" & \
+                                                           model_version == "{model_version}" & \
+                                                           deployment_status == True'.format(
+                                                        model_tag=self.model_tag,
+                                                        model_subtag=self.model_subtag,
+                                                        model_version=self.model_version))
+        deployable_number = deployable_model_info.shape[0]
+        log.info('Found current deployable model_id row count: {}'.format(deployable_number))
+        if deployable_number != 1:
+            log.error('Found {} deployable models for model_tag, model subtag pair...'.format(deployable_number))
+            sys.exit(1)
+        return(deployable_model_info)
 
     def _update_current_masterModelTable(self):
         log.info('Updating current masterModeTable information...')
-        self.deployable_model_id = self._retrive_deployable_model_id()
+        deployable_model_info = self._retrive_deployable_model_info()
+        self.deployable_model_id = deployable_model_info['model_id']
         masterModelTable = self.masterModelTable
-        deploy_number = masterModelTable.query('model_tag == {model_tag} & model_subtag == {model_subtag} & \
-                                    deployment_status = {deployment_status}'.format(model_tag=self.model_tag,
-                                                                                    model_subtag=self.model_subtag,
-                                                                                    deployment_status=self.deployment_status)).shape[0]
-        if deploy_number != 1:
-            log.error('Found {} deployable models for model_tag, model subtag pair...'.format(deploy_number))
-            sys.exit(1)
-        else:
-            log.info('Overwriting previous deployable model status to False...')
-            masterModelTable = masterModelTable.loc[masterModelTable['model_id'] == self.deployable_model_id,
-                                                    deployment_status] = 'False'
-        return(masterModelTable)
+        log.info('Overwriting previous deployable model status to False...')
+        decomission_update = pd.Series(data=['False', self.current_datetime['current_time']],
+                                       index=['deployment_status', 'decommission_date'])
+        masterModelTable.loc[int(self.deployable_model_id), decomission_update.index] = decomission_update
+        return({'masterModelTable': masterModelTable,
+                'deployment_entry': self._set_deployment_entry()})
 
     def _check_best_metric_deployment_status(self, metric):
         # assume best metric field consists of json string format: e.g. {'auc': 0.89}
@@ -215,9 +209,10 @@ class baseModelRegistrar(baseFramework):
             log.info('latest model_score is greater than curent_deployabled_model_score, \
                       deploy new model...')
             # update current masterModelTable
-            self._update_current_masterModelTable()
+            result_dict = self._update_current_masterModelTable()
+            self.masterModelTable = result_dict['masterModelTable']
         # steps: 4) deployment_entry
-            deployment_entry = self._set_deployment_entry()
+            deployment_entry = result_dict['deployment_entry']
         return(deployment_entry)
 
     @abstractmethod
@@ -248,11 +243,12 @@ class baseModelRegistrar(baseFramework):
     def _check_deployable_model_location(self):
         if self.masterModelTable.shape[0] < 1:
             log.error('masterModelTable not found, save the model to your masterModelTable location first')
-            sys.exit(1)
+            raise IOError
         else:
-            project_model_dataframe = self.masterModelTable.query('model_tag == {model_tag} & \
-                model_subtag == {model_subtag} & deployment_status == "True"'.format(model_tag=self.model_tag,
-                                                                                     model_subtag=self.model_subtag))
+            project_model_dataframe = self.masterModelTable.query('model_tag == "{model_tag}" & model_version == "{model_version}" &\
+                model_subtag == "{model_subtag}" & deployment_status == True'.format(model_tag=self.model_tag,
+                                                                                     model_subtag=self.model_subtag,
+                                                                                     model_version=self.model_version))
         if project_model_dataframe.shape[0] != 1:
             log.error('model_tag, model_subtag info found {} pair(s) in masterModelTable, please \
                         check entries...'.format(project_model_dataframe.shape[0]))

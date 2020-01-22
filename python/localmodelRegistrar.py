@@ -10,7 +10,7 @@ import csv
 import pickle
 import sys
 from baseModelRegistrar import baseModelRegistrar
-from utils.funcs import pickle_save, pickle_load, verify_and_create_dir
+from utils.funcs import pickle_save_model, pickle_load_model, verify_and_create_dir
 from abc import ABC, abstractmethod
 
 logging.basicConfig(format='%(asctime)s [%(filename)s:%(lineno)d] %(message)s',
@@ -25,6 +25,7 @@ class localModelRegistrar(baseModelRegistrar):
 
     def __init__(self, model_object, model_tag, model_subtag, model_version, model_directory,
                  masterModelTable_path='..'):
+        log.info('Initializing localModelRegistrar class...')
         # init base class
         baseModelRegistrar.__init__(self, model_object=model_object, model_tag=model_tag,
                                     model_subtag=model_subtag, model_version=model_version)
@@ -45,7 +46,7 @@ class localModelRegistrar(baseModelRegistrar):
 
     def _get_model_path(self):
         model_path = self.model_directory + '/' + self.model_tag + '/' + self.model_subtag + '/' +\
-                        self.model_version
+                        self.model_version + '/'
         return(model_path)
 
     def _save_model_object(self):
@@ -57,18 +58,16 @@ class localModelRegistrar(baseModelRegistrar):
         model_object = self.model_object.model_object
         # concat model file name
         log.info('Saving model_object: {} to local...'.format(self.model_path))
-        pickle_save(model_object, self.model_path)
+        pickle_save_model(model_object, self.model_path)
         log.info('Saved...')
-        return
 
     def _save_modelMasterTemplate(self, masterTableSchema):
         masterTableSchema_path = self.masterModelTable_path + '/masterModelTable.csv'
-        masterTableSchema.to_csv(masterTableSchema_path, sep=';')
+        masterTableSchema.to_csv(masterTableSchema_path, sep=';', index=False)
         log.info('modelMasterTemplate saved to local...')
-        return
 
     def _load_masterModeltable(self):
-        model_file_path = self.masterModelTable_path + '/modelModeltable.csv'
+        model_file_path = self.masterModelTable_path + '/masterModelTable.csv'
         if not os.path.isfile(model_file_path):
             log.info("masterModeltable doesn't exist in {}, creating it now...".
                      format(model_file_path))
@@ -76,26 +75,24 @@ class localModelRegistrar(baseModelRegistrar):
         else:
             # to do: add masterTable repo path
             masterModelTable_path = self.masterModelTable_path+'/masterModelTable.csv'
-            masterModelTable = pd.to_csv(masterModelTable_path)
+            masterModelTable = pd.read_csv(masterModelTable_path, sep=';')
             log.info('masteModelTable retrieved from local...')
         return(masterModelTable)
 
     def _load_model_object(self):
         current_model_path = self.masterModelTable.query['model_id == {}'.
                                                          format(self.deployable_model_id)]['model_path']
-        current_model_object = pickle.load(file=current_model_path)
+        current_model_object = self._load_model(current_model_path)
         return(current_model_object)
 
     def _get_model_location(self, project_model_dataframe):
         model_location = {
-            'model_path': project_model_dataframe['model_path']
+            'model_path': project_model_dataframe.reset_index().loc[0, 'model_path']
         }
         return(model_location)
 
     def _load_model(self, file_path):
-        model_file = open(file_path[self.model_path], 'rb')
-        model_object = pickle.load(model_file)
-        model_file.close()
+        model_object = pickle_load_model(file_path=file_path['model_path'])
         return(model_object)
 
 

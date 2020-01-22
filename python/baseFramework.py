@@ -11,7 +11,7 @@ logging.basicConfig(format='%(asctime)s [%(filename)s:%(lineno)d] %(message)s',
 log = logging.getLogger('baseFramework')
 
 
-class baseFramework(object):
+class baseFramework(ABC):
     "base class to unify model inteface for local and remote scenarios"
 
     def __init__(self, model_object, model_tag, model_subtag, model_version):
