@@ -1,7 +1,7 @@
-##ModelManager manages your model objects
+## ModelManager manages your model objects
 
 
-###to save your model: 
+### to save your model: 
 
 initialize ModelManger class,
     ModelManager = modelManager.(
@@ -17,7 +17,7 @@ initialize ModelManger class,
 
 You'll be able to save your model objects to your specifed path and create a csv file to track model persistency meta info.
 
-###to load your saved model:
+### to load your saved model:
 
     ModelManager = modelManager.(
         model_object=None,
