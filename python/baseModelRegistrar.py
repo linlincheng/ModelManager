@@ -234,7 +234,7 @@ class baseModelRegistrar(baseFramework):
             'model_object needs get_metric_score method to proceed, please implement it...'
         return
 
-    def _check_model_object_attr(self, attr): 
+    def _check_model_object_attr(self, attr):
         log.info('Checking model object has {} attribute...'.format(attr))
         assert hasattr(self.model_object, attr), \
             'model_object needs {} to proceed, please verify...'.format(attr)

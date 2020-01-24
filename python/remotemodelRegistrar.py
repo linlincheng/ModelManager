@@ -24,7 +24,7 @@ class remoteModelRegistrar(baseModelRegistrar):
     "remote class to save and bookkeep deployable models across projects"
 
     def __init__(self, model_object, model_tag, model_subtag, model_version,
-                 s3_location, s3_bucket, s3_region):
+                 s3_location, s3_bucket, s3_region, config_path):
         log.info('Initializing remoteModelRegistrar class...')
         # init base class
         baseModelRegistrar.__init__(self, model_object=model_subject, model_tag=model_tag,

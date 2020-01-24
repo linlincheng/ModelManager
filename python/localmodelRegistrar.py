@@ -6,16 +6,17 @@ import logging
 import os
 import pandas as pd
 import json
-import csv
 import pickle
 import sys
 from baseModelRegistrar import baseModelRegistrar
 from utils.funcs import pickle_save_model, pickle_load_model, verify_and_create_dir
 from abc import ABC, abstractmethod
 
-logging.basicConfig(format='%(asctime)s [%(filename)s:%(lineno)d] %(message)s',
-                    datefmt='%d-%m-%Y:%H:%M:%S',
-                    level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%d-%m-%Y:%H:%M:%S',
+    level=logging.INFO
+ )
 log = logging.getLogger('localModelRegistrar')
 
 
@@ -24,13 +25,13 @@ class localModelRegistrar(baseModelRegistrar):
     "local ModelRegistrar implementation for local model tracking..."
 
     def __init__(self, model_object, model_tag, model_subtag, model_version, model_directory,
-                 masterModelTable_path='..'):
+                 config_path='..'):
         log.info('Initializing localModelRegistrar class...')
         # init base class
         baseModelRegistrar.__init__(self, model_object=model_object, model_tag=model_tag,
                                     model_subtag=model_subtag, model_version=model_version)
         self.model_directory = model_directory
-        self.masterModelTable_path = masterModelTable_path
+        self.config_path = config_path
         self.model_path = None
 
     def _define_model_path_info(self):
@@ -62,19 +63,19 @@ class localModelRegistrar(baseModelRegistrar):
         log.info('Saved...')
 
     def _save_modelMasterTemplate(self, masterTableSchema):
-        masterTableSchema_path = self.masterModelTable_path + '/masterModelTable.csv'
+        masterTableSchema_path = self.config_path + '/masterModelTable.csv'
         masterTableSchema.to_csv(masterTableSchema_path, sep=';', index=False)
         log.info('modelMasterTemplate saved to local...')
 
     def _load_masterModeltable(self):
-        model_file_path = self.masterModelTable_path + '/masterModelTable.csv'
+        model_file_path = self.config_path + '/masterModelTable.csv'
         if not os.path.isfile(model_file_path):
             log.info("masterModeltable doesn't exist in {}, creating it now...".
                      format(model_file_path))
             masterModelTable = self._create_masterModelTable_schema()
         else:
             # to do: add masterTable repo path
-            masterModelTable_path = self.masterModelTable_path+'/masterModelTable.csv'
+            masterModelTable_path = self.config_path+'/masterModelTable.csv'
             masterModelTable = pd.read_csv(masterModelTable_path, sep=';')
             log.info('masteModelTable retrieved from local...')
         return(masterModelTable)

@@ -1,0 +1,8 @@
+# list of required packages for env setup
+pandas >= 0.25.3
+pickle
+json = 2.0.9
+logging >= 0.5.1.2
+inspect
+datetime
+
