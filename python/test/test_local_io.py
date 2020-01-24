@@ -33,7 +33,8 @@ def run_save_model():
         model_subtag='test_model_subtag',
         model_version='test_model_version',
         model_directory='./test/test_model_dir',
-        config_path='./test')
+        config_path='./test', 
+        use_local='True')
     modelManager.checkin_model()
 
 
@@ -44,7 +45,8 @@ def run_load_model():
         model_subtag='test_model_subtag',
         model_version='test_model_version',
         model_directory='./test/test_model_dir',
-        config_path='./test')
+        config_path='./test',
+        use_local = True)
     model = modelManager.chechout_model()
     return(model)
 
