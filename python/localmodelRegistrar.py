@@ -47,7 +47,7 @@ class localModelRegistrar(baseModelRegistrar):
 
     def _get_model_path(self):
         model_path = self.model_directory + '/' + self.model_tag + '/' + self.model_subtag + '/' +\
-                        self.model_version + '/'
+            self.model_version + '/'
         return(model_path)
 
     def _save_model_object(self):

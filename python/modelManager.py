@@ -10,17 +10,17 @@ logging.basicConfig(
 log = logging.getLogger('ModelManager')
 
 
-class ModelManager():
+class modelManager():
     """Your wrapper class to interact with local and remote io options"""
 
-    def __init__(self, model_tag, model_subtag, model_version, model_object=None, use_local=False,
+    def __init__(self, model_tag, model_subtag, model_version, model_object=None, use_local=True,
                  model_directory=None, masterModelTable_path='..', s3_location=None,
                  s3_bucket=None, s3_region=None, config_path=None):
         # check param config
         if use_local:
             local_list = [model_directory, config_path]
             assert None not in local_list, 'model_directory must be set for local io...'
-            self.model_directory = model_object
+            self.model_directory = model_directory
         else:
             remote_list = [s3_location, s3_bucket, s3_region]
             assert None not in [remote_list], 's3 configurations must be set for remote io...'
@@ -36,12 +36,14 @@ class ModelManager():
 
     def checkin_model(self):
         """loads model from your set up"""
+        log.info("Checking in your model object...")
         if self.use_local:
             self._save_local_model()
         else:
             self._save_remote_model()
 
     def checkout_model(self):
+        log.info("Checking out your model object...")
         if self.use_local:
             self._load_local_model()
         else:
@@ -50,7 +52,7 @@ class ModelManager():
     def _save_local_model(self):
         """saves model according to your set up"""
         localRegistrar = localModelRegistrar(
-            self.model_object,
+            model_object=self.model_object,
             model_tag=self.model_tag,
             model_subtag=self.model_subtag,
             model_version=self.model_version,
@@ -62,7 +64,7 @@ class ModelManager():
 
     def _load_local_model(self):
         localRegistrar = localModelRegistrar(
-            self.model_object,
+            model_object=self.model_object,
             model_tag=self.model_tag,
             model_subtag=self.model_subtag,
             model_version=self.model_version,
@@ -70,10 +72,13 @@ class ModelManager():
             config_path=self.config_path)
         self.model_object = localRegistrar.load_deployable_model()
         log.info('Model object loaded...')
-        return(model_object)
+        print(type(self.model_object))
+        return(self.model_object)
 
     def _save_remote_model(self):
+        log.error('To be implemented...')
         pass
 
     def _load_remote_model(self):
+        log.error('To be implemented...')
         pass
