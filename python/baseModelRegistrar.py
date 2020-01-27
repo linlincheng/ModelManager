@@ -9,9 +9,9 @@ import json
 import csv
 import pickle
 import sys
-from utils.funcs import get_current_datetime
+from python.utils.funcs import get_current_datetime
 from abc import ABC, abstractmethod
-from baseFramework import baseFramework
+from python.baseFramework import baseFramework
 
 logging.basicConfig(format='%(asctime)s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S',

@@ -1,5 +1,5 @@
-from baseModelRegistrar import baseModelRegistrar
-from localmodelRegistrar import localModelRegistrar
+from python.baseModelRegistrar import baseModelRegistrar
+from python.localmodelRegistrar import localModelRegistrar
 import logging
 
 logging.basicConfig(

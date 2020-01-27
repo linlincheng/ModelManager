@@ -8,8 +8,8 @@ import pandas as pd
 import json
 import pickle
 import sys
-from baseModelRegistrar import baseModelRegistrar
-from utils.funcs import pickle_save_model, pickle_load_model, verify_and_create_dir
+from python.baseModelRegistrar import baseModelRegistrar
+from python.utils.funcs import pickle_save_model, pickle_load_model, verify_and_create_dir
 from abc import ABC, abstractmethod
 
 logging.basicConfig(
