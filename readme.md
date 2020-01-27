@@ -40,6 +40,11 @@ You'll be able to save your model objects to your specifed path and create a csv
 See playground.ipynb for more details.
 
 
+To test drive the repo with appropirate env setup:
+
+do: `test_run_interactive.sh`
+to access jupyter via docker.
+
 Note:
 
 This is a WIP and many parts may be still under test and development. Currently only local versions work. More to come soon!
